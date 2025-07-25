@@ -1,15 +1,7 @@
-// clarius-page-scripts.js
+// clarius-page-scripts.js (Modified)
 
-// GSAP and ScrollTrigger for animations
-// You don't need these exact lines in the JS file if they are external script tags,
-// but for clarity, ensure they are loaded *before* your custom script.
-// In Webflow, you'll place these links in the "Before </body> tag" custom code section, just like your custom script.
-// <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/gsap.min.js"></script>
-// <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/ScrollTrigger.min.js"></script>
-// <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-
-
-document.addEventListener('DOMContentLoaded', function() {
+// Function to initialize all your page's JavaScript
+function initializeClariusPageScripts() {
     gsap.registerPlugin(ScrollTrigger);
 
     // --- Ultrasound for Everyone Animation ---
@@ -62,36 +54,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const experienceImages = document.querySelectorAll('.experience-ipad-screen img');
 
     // Initialize GSAP animations for experience levels
-    const experienceTimeline = gsap.timeline({ paused: true });
-    
-    // Create fade in/out animations for each image
-    experienceImages.forEach((img, index) => {
-        if (index > 0) {
-            experienceTimeline.to(img, { 
-                opacity: 0, 
-                duration: 0.3, 
-                ease: "power1.inOut" 
-            }, index * 0.1);
-        }
-    });
+    // Note: The original had a timeline here that might cause issues if not paused/managed correctly.
+    // For simplicity, we'll ensure the images are shown/hidden with CSS classes and direct opacity changes.
+    // The previous GSAP timeline setup for images might be overkill for simple opacity toggles.
+    // We'll proceed with the direct opacity/class change as in your original click listener.
 
     experienceLevels.forEach((level, index) => {
         level.addEventListener('click', () => {
             const targetLevel = level.dataset.level;
 
-            // Update active class
+            // Update active class for levels
             experienceLevels.forEach(l => l.classList.remove('active'));
             level.classList.add('active');
 
-            // Animate the transition
+            // Animate the image transition
             gsap.to(experienceImages, {
                 opacity: 0,
                 duration: 0.3,
                 ease: "power1.inOut",
                 onComplete: () => {
-                    // Reset all images to hidden
+                    // Hide all images first
                     experienceImages.forEach(img => img.classList.remove('active'));
-                    
+
                     // Show the target image
                     const targetImage = document.querySelector(`.experience-ipad-screen img[data-level="${targetLevel}"]`);
                     if (targetImage) {
@@ -114,23 +98,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const dots = document.querySelectorAll('.slider-dot');
         const prevBtn = document.getElementById('prev-slide');
         const nextBtn = document.getElementById('next-slide');
-        
+
         let currentSlide = 0;
         const slideCount = slides.length;
-        
+
         function goToSlide(index) {
             if (index < 0) index = slideCount - 1;
             if (index >= slideCount) index = 0;
-            
+
             currentSlide = index;
             slider.style.transform = `translateX(-${currentSlide * 100}%)`;
-            
+
             // Update dots
             dots.forEach((dot, i) => {
                 dot.classList.toggle('active', i === currentSlide);
             });
+
+            // Update active image in mobile slider
+            slides.forEach((slide, i) => {
+                const ipadScreen = slide.querySelector('.experience-ipad-screen');
+                const imagesInSlide = ipadScreen ? ipadScreen.querySelectorAll('img') : [];
+                imagesInSlide.forEach(img => img.classList.remove('active')); // Hide all in this slide
+                if (i === currentSlide && imagesInSlide.length > 0) {
+                    imagesInSlide[0].classList.add('active'); // Show first image in active slide
+                }
+            });
         }
-        
+
         // Dot navigation
         dots.forEach(dot => {
             dot.addEventListener('click', () => {
@@ -138,18 +132,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 goToSlide(slideIndex);
             });
         });
-        
+
         // Button navigation
         prevBtn.addEventListener('click', () => goToSlide(currentSlide - 1));
         nextBtn.addEventListener('click', () => goToSlide(currentSlide + 1));
-        
-        // Initialize
-        goToSlide(0);
+
+        // Initialize mobile slider images
+        slides.forEach((slide, i) => {
+            const ipadScreen = slide.querySelector('.experience-ipad-screen');
+            const imagesInSlide = ipadScreen ? ipadScreen.querySelectorAll('img') : [];
+            imagesInSlide.forEach(img => img.classList.remove('active'));
+            if (i === 0 && imagesInSlide.length > 0) { // Only the first slide's image should be active initially
+                imagesInSlide[0].classList.add('active');
+            }
+        });
+        goToSlide(0); // Ensure initial state is correct for slider
     }
-    
+
     // --- Counter Animation ---
     const counters = document.querySelectorAll('.counter-stat');
-    
+
     const animateCounter = (counter) => {
         const target = +counter.getAttribute('data-target');
         const duration = 2000; // 2 seconds
@@ -204,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     link.classList.remove('active');
                     if (link.getAttribute('href') === `#${id}`) {
                         link.classList.add('active');
-                        
+
                         // On mobile, scroll the active link into view
                         if (window.innerWidth <= 768) {
                             link.scrollIntoView({
@@ -229,18 +231,21 @@ document.addEventListener('DOMContentLoaded', function() {
             // Create ripple element
             const ripple = document.createElement('span');
             ripple.classList.add('ripple');
-            
+
             // Position the ripple
             const rect = this.getBoundingClientRect();
             const size = Math.max(rect.width, rect.height);
             ripple.style.width = ripple.style.height = `${size}px`;
             ripple.style.left = `${e.clientX - rect.left - size/2}px`;
             ripple.style.top = `${e.clientY - rect.top - size/2}px`;
-            
+
             // Add and remove ripple
             this.appendChild(ripple);
             setTimeout(() => ripple.remove(), 600);
         });
     });
+}
 
-});
+// This listener will call the initialization function once the HTML is loaded
+// and the custom 'clariusHtmlLoaded' event is dispatched.
+window.addEventListener('clariusHtmlLoaded', initializeClariusPageScripts);
